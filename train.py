@@ -54,7 +54,7 @@ if __name__ == "__main__":
     #   classes_path    指向model_data下的txt，与自己训练的数据集相关 
     #                   训练前一定要修改classes_path，使其对应自己的数据集
     #---------------------------------------------------------------------#
-    classes_path    = 'model_data/shape_classes.txt'   
+    classes_path    = 'model_data/shape_classes.txt'
     #----------------------------------------------------------------------------------------------------------------------------#
     #   权值文件的下载请看README，可以通过网盘下载。模型的 预训练权重 对不同数据集是通用的，因为特征是通用的。
     #   模型的 预训练权重 比较重要的部分是 主干特征提取网络的权值部分，用于进行特征提取。
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     #                   如果不设置model_path，pretrained = True，此时仅加载主干开始训练。
     #                   如果不设置model_path，pretrained = False，Freeze_Train = Fasle，此时从0开始训练，且没有冻结主干的过程。
     #----------------------------------------------------------------------------------------------------------------------------#
-    pretrained      = False
+    pretrained      = True
     #------------------------------------------------------#
     #   获取先验框大小
     #------------------------------------------------------#
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     num_classes = num_classes + 1
     anchors     = get_anchors(input_shape, anchors_size)
     anchors     = torch.from_numpy(anchors).type(torch.FloatTensor)
-    
+
     model = Yolact(num_classes, pretrained = pretrained)
     if model_path != "":
         #------------------------------------------------------#
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         #------------------------------------------------------#
         if local_rank == 0:
             print('Load weights {}.'.format(model_path))
-        
+
         #------------------------------------------------------#
         #   根据预训练权重的Key和模型的Key进行加载
         #------------------------------------------------------#
@@ -266,7 +266,7 @@ if __name__ == "__main__":
         loss_history = LossHistory(save_dir, model, input_shape=input_shape)
     else:
         loss_history = None
-        
+
     #------------------------------------------------------------------#
     #   torch 1.2不支持amp，建议使用torch 1.7.1及以上正确使用fp16
     #   因此torch1.2这里显示"could not be resolve"
@@ -297,7 +297,7 @@ if __name__ == "__main__":
             model_train = torch.nn.DataParallel(model)
             cudnn.benchmark = True
             model_train = model_train.cuda()
-    
+
     #---------------------------#
     #   读取数据集对应的txt
     #---------------------------#
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         #   获得学习率下降的公式
         #---------------------------------------#
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
-        
+
         #---------------------------------------#
         #   判断每一个世代的长度
         #---------------------------------------#
@@ -385,7 +385,7 @@ if __name__ == "__main__":
 
         train_dataset   = COCODetection(train_image_path, train_coco, COCO_LABEL_MAP, Augmentation(input_shape))
         val_dataset     = COCODetection(val_image_path, val_coco, COCO_LABEL_MAP, Augmentation(input_shape))
-        
+
         if distributed:
             train_sampler   = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True,)
             val_sampler     = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False,)
@@ -395,12 +395,12 @@ if __name__ == "__main__":
             train_sampler   = None
             val_sampler     = None
             shuffle         = True
-            
+
         gen             = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=dataset_collate, sampler=train_sampler)
-        gen_val         = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
+        gen_val         = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=dataset_collate, sampler=val_sampler)
-    
+
         #---------------------------------------#
         #   开始模型训练
         #---------------------------------------#
@@ -424,7 +424,7 @@ if __name__ == "__main__":
                 #   获得学习率下降的公式
                 #---------------------------------------#
                 lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
-                            
+
                 #------------------------------------#
                 #   冻结一定部分训练
                 #------------------------------------#
@@ -440,21 +440,21 @@ if __name__ == "__main__":
 
                 if distributed:
                     batch_size = batch_size // ngpus_per_node
-                    
+
                 gen             = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                             drop_last=True, collate_fn=dataset_collate, sampler=train_sampler)
-                gen_val         = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
+                gen_val         = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                             drop_last=True, collate_fn=dataset_collate, sampler=val_sampler)
 
                 UnFreeze_flag = True
 
             if distributed:
                 train_sampler.set_epoch(epoch)
-                
+
             set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
-            
-            fit_one_epoch(model_train, model, multi_loss, loss_history, optimizer, epoch, 
+
+            fit_one_epoch(model_train, model, multi_loss, loss_history, optimizer, epoch,
                     epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
-            
+
         if local_rank == 0:
             loss_history.writer.close()
