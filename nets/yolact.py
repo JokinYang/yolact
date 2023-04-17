@@ -126,7 +126,7 @@ class Yolact(nn.Module):
         #   获得的C5为17, 17, 2048
         #----------------------------#
         import timm
-        self.backbone = timm.create_model("mobilenetv3_small_100", pretrained=pretrained)
+        self.backbone = timm.create_model("mobilenetv3_small_100", pretrained=pretrained,features_only=True,out_indices=[2,3,4])
         # self.backbone               = ResNet(layers=[3, 4, 6, 3])
         # if pretrained:
         #     self.backbone.load_state_dict(torch.load("model_data/resnet50_backbone_weights.pth"))
