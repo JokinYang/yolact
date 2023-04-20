@@ -127,7 +127,10 @@ class Yolact(nn.Module):
         #----------------------------#
         self.backbone               = ResNet(layers=[3, 4, 6, 3])
         if pretrained:
-            self.backbone.load_state_dict(torch.load("model_data/resnet50_modified_yolact.pth"))
+            try:
+                self.backbone.load_state_dict(torch.load("model_data/resnet50_modified_yolact.pth"))
+            except Exception:
+                pass
 
         #----------------------------#
         #   获得的P3为68, 68, 256
@@ -137,7 +140,7 @@ class Yolact(nn.Module):
         #   获得的P7为5, 5, 256
         #----------------------------#
         self.fpn                    = FPN([384, 512, 640])
-        
+
         #--------------------------------#
         #   对P3进行上采样
         #   256, 68, 68 -> 32, 136, 136
@@ -171,7 +174,7 @@ class Yolact(nn.Module):
         #   对P3进行上采样
         #   256, 68, 68 -> 32, 136, 136 -> 136, 136, 32
         #---------------------------------------------------#
-        pred_proto = self.proto_net(features[0])  
+        pred_proto = self.proto_net(features[0])
         pred_proto = pred_proto.permute(0, 2, 3, 1).contiguous()
 
         #--------------------------------------------#
