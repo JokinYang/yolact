@@ -57,11 +57,11 @@ class ResNet(nn.Module):
         # 136, 136, 64 -> 136, 136, 256
         self._make_layer(block, 64, layers[0])
         # 136, 136, 256 -> 68, 68, 512
-        self._make_layer(block, 128, layers[1], stride=2)
+        self._make_layer(block, 96, layers[1], stride=2)
         # 68, 68, 512 -> 34, 34, 1024
-        self._make_layer(block, 256, layers[2], stride=2)
+        self._make_layer(block, 128, layers[2], stride=2)
         # 34, 34, 1024 -> 17, 17, 2048
-        self._make_layer(block, 512, layers[3], stride=2)
+        self._make_layer(block, 160 , layers[3], stride=2)
 
         self.backbone_modules = [m for m in self.modules() if isinstance(m, nn.Conv2d)]
 
